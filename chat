@@ -1,343 +1,295 @@
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contoso Sample Web Chat</title>
-    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
-    <script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.0/js/msal.js"></script>
-    <script src="https://unpkg.com/@azure/storage-blob@10.3.0/browser/azure-storage.blob.min.js"
-            integrity="sha384-fsfhtLyVQo3L3Bh73qgQoRR328xEeXnRGdoi53kjo1uectCfAHFfavrBBN2Nkbdf"
-            crossorigin="anonymous"></script>
-    <script type="text/javascript">
-        if (typeof Msal === 'undefined') document.write(unescape("%3Cscript src='https://alcdn.msftauth.net/lib/1.2.0/js/msal.js' type='text/javascript' %3E%3C/script%3E"));
-    </script>
+<script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+<script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.0/js/msal.js"></script>
+<script src="https://unpkg.com/@azure/storage-blob@10.3.0/browser/azure-storage.blob.min.js"
+  integrity="sha384-fsfhtLyVQo3L3Bh73qgQoRR328xEeXnRGdoi53kjo1uectCfAHFfavrBBN2Nkbdf"
+  crossorigin="anonymous"></script>
+<script type="text/javascript">
+  if (typeof Msal === 'undefined') document.write(unescape("%3Cscript src='https://alcdn.msftauth.net/lib/1.2.0/js/msal.js' type='text/javascript' %3E%3C/script%3E"));
+</script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
-        html, body {
-            height: 100%;
-        }
-        body {
-            margin: 0;
-            font-family: 'Open Sans', sans-serif;
-        }
-        h1 {
-            color: white;
-            font-family: "Montserrat", sans-serif;
-            font-size: 16px;
-            line-height: 20px;
-            margin: 0;
-            padding: 0 20px;
-            font-weight: bold;
-        }
-        #banner {
-            align-items: center;
-            background: grey;
-            display: flex;
-            justify-content: space-between;
-            height: 50px;
-            border-radius: 25px;
-            margin: 10px;
-            padding: 10px 20px;
-            position: relative;
-        }
-        #banner img {
-            height: 40px;
-            margin-left: auto;
-            margin-right: 20px;
-            width: auto;
-        }
-        #webchat {
-            height: calc(93% - 50px);
-            overflow: hidden;
-            position: fixed;
-            top: 80px;
-            width: 100%;
-        }
-        /* Modal styles */
-        .modal {
-            display: none; 
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
-            padding-top: 60px;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
+
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Open Sans', sans-serif;; /* Apply the custom font globally */
+      }
+
+      h1 {
+        color: white; /* Text Color */
+        font-family: "Montserrat", sans-serif; /* Use Montserrat for the banner */
+        font-size: 16px;
+        line-height: 20px;
+        margin: 0;
+        padding: 0 20px;
+        font-weight: bold; /* Make the banner font bold */
+      }
+
+      #banner {
+       align-items: center;
+        background: grey;
+        display: flex;
+        justify-content: space-between;
+        height: 50px;
+        border-radius: 25px;
+        margin: 10px;
+        padding: 10px 20px;
+        position: relative;
+        
+      }
+      
+      
+      #banner img {
+        height: 40px; /* Adjust as needed */
+        margin-left: auto;
+        margin-right: 20px;
+        width: auto;
+      }
+
+
+      #webchat {
+        height: calc(93% - 50px);
+        overflow: hidden;
+        position: fixed;
+        top: 80px;
+        width: 100%;
+      }
+      
     </style>
-</head>
-<body>
-<div>
-    <div id="banner">
+  </head>
+  <body>
+    <div>
+      <div id="banner">
         <h1>Max - Your Virtual Assistant</h1>
-        <img src="ur logo" alt="Company Logo">
-        <div>
-            <label id="userName" name="userName" style="width:75%;height:15px;border-color: Transparent;">Not logged in.</label>
-            <button id="login" name="login" onclick="onSignInClick()" style="float: right;background-color: aliceblue;">Log In</button>
-        </div>
-        <div id="webchat" role="main"></div>
+        <img src="https://d1yjjnpx0p53s8.cloudfront.net/styles/large/s3/itau_2024.png?SPOUAiEs21lIKLn4mDc_65w7_5sVm6XM&itok=BVrOn144" alt="Company Logo"> <!-- Replace with your logo's URL -->
+       <div>
+    <label id="userName" name="userName" style="width:75%;height:15px;border-color: Transparent;">Not logged in.</label>
+    <button id="login" name="login" onclick="onSignInClick()" style="float: right;background-color: aliceblue;">Log In</button>
+  </div>
+      <div id="webchat" role="main"></div>
     </div>
-    <!-- The Modal -->
-    <div id="codeModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <p>Please enter this validation code to complete the sign-in:</p>
-            <input type="text" id="validationCode" name="validationCode">
-            <button id="submitCode" onclick="submitCode()">Submit</button>
-        </div>
-    </div>
+
     <script>
-        var clientApplication;
-        (function () {
-            var msalConfig = {
-                auth: {
-                    clientId: 'ur id',
-                    authority: 'ur link'
-                },
-                cache: {
-                    cacheLocation: 'localStorage',
-                    storeAuthStateInCookie: false
-                }
-            };
-            if (!clientApplication) {
-                clientApplication = new Msal.UserAgentApplication(msalConfig);
-            }
-        }());
+    
+    function onSignin(idToken) {
+      let user = clientApplication.getAccount();
+      document.getElementById("userName").innerHTML = "Currently logged in as " + user.name;
+      let requestObj1 = {
+	scopes: ["user.read", 'openid', 'profile']
+      };
+    }
 
-        function onSignin(idToken) {
-            let user = clientApplication.getAccount();
-            document.getElementById("userName").innerHTML = "Currently logged in as " + user.name;
-            let requestObj1 = {
-                scopes: ["user.read", 'openid', 'profile']
-            };
-        }
+    function onSignInClick() {
+      let requestObj = {
+	scopes: ["user.read", 'openid', 'profile']
+      };
 
-        function onSignInClick() {
-            let requestObj = {
-                scopes: ["user.read", 'openid', 'profile']
-            };
+      clientApplication.loginPopup(requestObj).then(onSignin).catch(function (error) {console.log(error) });
+    }
 
-            clientApplication.loginPopup(requestObj).then(onSignin).catch(function (error) {
-                console.log(error)
-            });
-        }
+function getOAuthCardResourceUri(activity) {
+  if (activity &&
+       activity.attachments &&
+       activity.attachments[0] &&
+       activity.attachments[0].contentType === 'application/vnd.microsoft.card.oauth' &&
+       activity.attachments[0].content.tokenExchangeResource) {
+	 // asking for token exchange with AAD
+	 return activity.attachments[0].content.tokenExchangeResource.uri;
+   }
+}
 
-        function getOAuthCardResourceUri(activity) {
-            if (activity &&
-                activity.attachments &&
-                activity.attachments[0] &&
-                activity.attachments[0].contentType === 'application/vnd.microsoft.card.oauth' &&
-                activity.attachments[0].content.tokenExchangeResource) {
-                return activity.attachments[0].content.tokenExchangeResource.uri;
-            }
-        }
+function exchangeTokenAsync(resourceUri) {
+  let user = clientApplication.getAccount();
+   if (user) {
+     let requestObj = {
+       scopes: [resourceUri]
+     };
+     return clientApplication.acquireTokenSilent(requestObj)
+       .then(function (tokenResponse) {
+	 return tokenResponse.accessToken;
+	 })
+	 .catch(function (error) {
+	   console.log(error);
+	 });
+	 }
+	 else {
+	 return Promise.resolve(null);
+   }
+}
 
-        function exchangeTokenAsync(resourceUri) {
-            let user = clientApplication.getAccount();
-            if (user) {
-                let requestObj = {
-                    scopes: [resourceUri]
-                };
-                return clientApplication.acquireTokenSilent(requestObj)
-                    .then(function (tokenResponse) {
-                        return tokenResponse.accessToken;
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                    });
-            } else {
-                return Promise.resolve(null);
-            }
-        }
+async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+	...options.headers,
+	accept: 'application/json'
+      }
+    });
 
-        async function fetchJSON(url, options = {}) {
-            const res = await fetch(url, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    accept: 'application/json'
-                }
-            });
+    if (!res.ok) {
+      throw new Error(Failed to fetch JSON due to ${res.status});
+    }
 
-            if (!res.ok) {
-                throw new Error(`Failed to fetch JSON due to ${res.status}`);
-            }
+    return await res.json();
+  } 
+</script>
 
-            return await res.json();
-        }
+<script>
+     var clientApplication;
+     (function (){
+       var msalConfig = {
+	   auth: {
+	     clientId: 'id',
+	     authority: 'link'
+	   },
+	   cache: {
+	     cacheLocation: 'localStorage',
+	     storeAuthStateInCookie: false
+	   }
+       };
+       if (!clientApplication) {
+	 clientApplication = new Msal.UserAgentApplication(msalConfig);
+       }
+     } ());
 
-        function openModal() {
-            var modal = document.getElementById("codeModal");
-            modal.style.display = "block";
-        }
+(async function main() {
 
-        function closeModal() {
-            var modal = document.getElementById("codeModal");
-            modal.style.display = "none";
-        }
+    // Add your BOT ID below 
+    var theURL = "link" // you can find the token URL via the mobile app channel configuration
 
-        function submitCode() {
-            var code = document.getElementById("validationCode").value;
-            // Handle the code submission here
-            closeModal();
-        }
+	var userId = clientApplication.account?.accountIdentifier != null ? 
+					("You-customized-prefix" + clientApplication.account.accountIdentifier).substr(0, 64) 
+					: (Math.random().toString() + Date.now().toString()).substr(0,64);
+					
+   const { token } = await fetchJSON(theURL);
+   const directLine = window.WebChat.createDirectLine({ token });
+   const store = WebChat.createStore({}, ({ dispatch }) => next => action => {
+      const { type } = action;
+      if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
+	dispatch({
+	  type: 'WEB_CHAT/SEND_EVENT',
+	  payload: {
+	    name: 'startConversation',
+	    type: 'event',
+	    value: { text: "hello" }
+	  }
+	});
+	return next(action);
+      }
+      if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
+	const activity = action.payload.activity;
+	let resourceUri;
+	if (activity.from && activity.from.role === 'bot' &&
+	  (resourceUri = getOAuthCardResourceUri(activity))) {
+	  exchangeTokenAsync(resourceUri).then(function (token) {
+	    if (token) {
+	      directLine.postActivity({
+		type: 'invoke',
+		name: 'signin/tokenExchange',
+		value: {
+		  id: activity.attachments[0].content.tokenExchangeResource.id,
+		  connectionName: activity.attachments[0].content.connectionName,
+		  token
+		},
+		"from": {
+		  id: userId,
+		  name: clientApplication.account.name,
+		  role: "user"
+		}
+	      }).subscribe(
+		id => {
+		  if (id === 'retry') {
+		    // bot was not able to handle the invoke, so display the oauthCard
+		    return next(action);
+		  }
+		  // else: tokenexchange successful and we do not display the oauthCard
+		},
+		error => {
+		  // an error occurred to display the oauthCard
+		  return next(action);
+		}
+	      );
+	      return;
+	    }
+	    else
+	      return next(action);
+	  });
+	}
+	else
+	  return next(action);
+      }
+      else
+	return next(action);
+    });
+   
+        // Set the CSS rules.
+        const styleSet = window.WebChat.createStyleSet({
+          bubbleFromUserBackground: '#EAEAEA', // User Messages Background Color
+          bubbleFromUserTextColor: 'Black', // User Messages Text Color
+          bubbleBackground: '#EAEAEA', // Bot Messages Background Color
+          bubbleTextColor: 'Black', // Bot Messages Text Color
+          // Bot bubble border color
+           sendBoxBackground: 'linear-gradient(45deg, #FF8B21, #FF9F33, #FFB545, #FF8B21)',
+          
+           bubbleBorderRadius: 30,
+           bubbleFromUserBorderColor: '#EAEAEA',
+           bubbleFromBotBorderColor: '#EAEAEA',
+           bubbleFromUserBorderRadius: 20,
+          // Input Fields Background Color
+          sendBoxBorder: '1px solid #FF9700', // Input Fields Border Color
+          sendBoxTextColor: '#2D2D2D', // Input Fields Text Color
+          sendBoxButtonColor: '#00669E', // Send Button Text Color
+          sendBoxButtonBackground: '#FFF3E0', 
+          sendBoxButtonBorderRadius: 50,
+          sendBoxButtonHeight: 40,
+          sendBoxButtonWidth: 40,
+          sendBoxButtonPadding: 0,
+          sendBoxButtonDisplay: 'flex',
+          sendBoxButtonAlignItems: 'center',
+          sendBoxTextBox: {
+            fontWeight: 'bold' // Make text inside the send box bold
+          }
+        });
 
-        // Close the modal when the user clicks on <span> (x)
-        var span = document.getElementsByClassName("close")[0];
-        span.onclick = function() {
-            closeModal();
-        }
+        // After generated, you can modify the CSS rules.
+        // Change font family and weight.
+        styleSet.textContent = {
+          ...styleSet.textContent,
+          fontFamily: "'Open Sans', 'Comic Sans MS', 'Arial', sans-serif",
+          fontWeight: 'normal'
+        };
 
-        // Close the modal when the user clicks anywhere outside of the modal
-        window.onclick = function(event) {
-            var modal = document.getElementById("codeModal");
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
+        // Set the avatar options.
+        const avatarOptions = {
+        
 
-        (async function main() {
-            // Add your BOT ID below
-            var theURL = "ur url"; // you can find the token URL via the mobile app channel configuration
+         userAvatarImage: 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png',
+           botAvatarImage: 'https://www.paidmembershipspro.com/wp-content/uploads/2022/01/automatorwp-icon.png',
+           botAvatarInitials: 'BT',
+           userAvatarInitials: 'Me',
+        };
 
-            var userId = clientApplication.account?.accountIdentifier != null ?
-                ("You-customized-prefix" + clientApplication.account.accountIdentifier).substr(0, 64)
-                : (Math.random().toString() + Date.now().toString()).substr(0, 64);
-
-            const { token } = await fetchJSON(theURL);
-            const directLine = window.WebChat.createDirectLine({ token });
-            const store = WebChat.createStore({}, ({ dispatch }) => next => action => {
-                const { type } = action;
-                if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
-                    dispatch({
-                        type: 'WEB_CHAT/SEND_EVENT',
-                        payload: {
-                            name: 'startConversation',
-                            type: 'event',
-                            value: { text: "hello" }
-                        }
-                    });
-                    return next(action);
-                }
-                if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-                    const activity = action.payload.activity;
-                    let resourceUri;
-                    if (activity.from && activity.from.role === 'bot' &&
-                        (resourceUri = getOAuthCardResourceUri(activity))) {
-                        exchangeTokenAsync(resourceUri).then(function (token) {
-                            if (token) {
-                                directLine.postActivity({
-                                    type: 'invoke',
-                                    name: 'signin/tokenExchange',
-                                    value: {
-                                        id: activity.attachments[0].content.tokenExchangeResource.id,
-                                        connectionName: activity.attachments[0].content.connectionName,
-                                        token
-                                    },
-                                    "from": {
-                                        id: userId,
-                                        name: clientApplication.account.name,
-                                        role: "user"
-                                    }
-                                }).subscribe(
-                                    id => {
-                                        if (id === 'retry') {
-                                            // bot was not able to handle the invoke, so display the oauthCard
-                                            openModal();  // Open the modal instead of showing the oauthCard
-                                            return next(action);
-                                        }
-                                        // else: token exchange successful and we do not display the oauthCard
-                                    },
-                                    error => {
-                                        // an error occurred to display the oauthCard
-                                        openModal();  // Open the modal in case of an error
-                                        return next(action);
-                                    }
-                                );
-                                return;
-                            } else
-                                return next(action);
-                        });
-                    } else
-                        return next(action);
-                } else
-                    return next(action);
-            });
-
-            // Set the CSS rules.
-            const styleSet = window.WebChat.createStyleSet({
-                bubbleFromUserBackground: '#EAEAEA',
-                bubbleFromUserTextColor: 'Black',
-                bubbleBackground: '#EAEAEA',
-                bubbleTextColor: 'Black',
-                sendBoxBackground: 'linear-gradient(45deg, #FF8B21, #FF9F33, #FFB545, #FF8B21)',
-                bubbleBorderRadius: 30,
-                bubbleFromUserBorderColor: '#EAEAEA',
-                bubbleFromBotBorderColor: '#EAEAEA',
-                bubbleFromUserBorderRadius: 20,
-                sendBoxBorder: '1px solid #FF9700',
-                sendBoxTextColor: '#2D2D2D',
-                sendBoxButtonColor: '#00669E',
-                sendBoxButtonBackground: '#FFF3E0',
-                sendBoxButtonBorderRadius: 50,
-                sendBoxButtonHeight: 40,
-                sendBoxButtonWidth: 40,
-                sendBoxButtonPadding: 0,
-                sendBoxButtonDisplay: 'flex',
-                sendBoxButtonAlignItems: 'center',
-                sendBoxTextBox: {
-                    fontWeight: 'bold'
-                }
-            });
-
-            // After generated, you can modify the CSS rules.
-            // Change font family and weight.
-            styleSet.textContent = {
-                ...styleSet.textContent,
-                fontFamily: "'Open Sans', 'Comic Sans MS', 'Arial', sans-serif",
-                fontWeight: 'normal'
-            };
-
-            // Set the avatar options.
-            const avatarOptions = {
-                userAvatarImage: 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png',
-                botAvatarImage: 'https://www.paidmembershipspro.com/wp-content/uploads/2022/01/automatorwp-icon.png',
-                botAvatarInitials: 'BT',
-                userAvatarInitials: 'Me',
-            };
-
-            window.WebChat.renderWebChat({
-                directLine,
-                styleSet,
-                styleOptions: {
-                    ...avatarOptions,
-                    hideUploadButton: true
-                }
-            }, document.getElementById('webchat'));
-        })().catch(err => console.error("An error occurred: " + err));
+        window.WebChat.renderWebChat({    // might add this to the code later
+          directLine,
+          styleSet,
+          styleOptions: {
+            ...avatarOptions,
+            hideUploadButton: true // Hide the upload button
+          }
+        }, document.getElementById('webchat'));
+      })().catch(err => console.error("An error occured: " + err));
     </script>
-</body>
+  </body>
 </html>
