@@ -73,6 +73,7 @@
     var directLine;
     var userId;
     var store;
+    var userAvatar;
 
     (function () {
         var msalConfig = {
@@ -90,9 +91,18 @@
         }
     }());
 
-    function onSignin() {
+    async function onSignin() {
         let user = clientApplication.getAccount();
         document.getElementById("userName").innerHTML = "Currently logged in as " + user.name;
+
+        // Fetch user's profile picture
+        try {
+            userAvatar = await fetchUserProfilePicture();
+        } catch (error) {
+            console.error("Failed to fetch user profile picture: " + error);
+            userAvatar = 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png'; // Fallback avatar
+        }
+
         startWebChat();
     }
 
@@ -104,6 +114,29 @@
         clientApplication.loginPopup(requestObj).then(onSignin).catch(function (error) {
             console.log(error);
         });
+    }
+
+    async function fetchUserProfilePicture() {
+        let requestObj = {
+            scopes: ["user.read"]
+        };
+
+        const tokenResponse = await clientApplication.acquireTokenSilent(requestObj);
+        const accessToken = tokenResponse.accessToken;
+
+        const graphEndpoint = "https://graph.microsoft.com/v1.0/me/photo/$value";
+        const response = await fetch(graphEndpoint, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch profile picture: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
     }
 
     function startWebChat() {
@@ -205,7 +238,7 @@
             };
 
             const avatarOptions = {
-                userAvatarImage: 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png',
+                userAvatarImage: userAvatar, // Set fetched user avatar
                 botAvatarImage: 'https://www.paidmembershipspro.com/wp-content/uploads/2022/01/automatorwp-icon.png',
                 botAvatarInitials: 'BT',
                 userAvatarInitials: 'Me',
@@ -220,6 +253,18 @@
                     hideUploadButton: true
                 }
             }, document.getElementById('webchat'));
+
+            // Start conversation automatically
+            directLine.postActivity({
+                from: { id: userId, name: clientApplication.account.name },
+                name: 'startConversation',
+                type: 'event',
+                value: { text: 'hello' }
+            }).subscribe(
+                id => console.log(`Posted activity, assigned ID ${id}`),
+                error => console.error('Error posting activity', error)
+            );
+
         })().catch(err => console.error("An error occurred: " + err));
     }
 
