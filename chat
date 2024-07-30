@@ -58,7 +58,7 @@
 <body>
 <div>
     <div id="banner">
-        <img src="https://d1yjjnpx0p53s8.cloudfront.net/styles/large/s3/itau_2024.png?SPOUAiEs21lIKLn4mDc_65w7_5sVm6XM&itok=BVrOn144" alt="Company Logo">
+        <img src="logo" alt="Company Logo">
         <h1>Max - Your Virtual Assistant</h1>
         <div style="margin-left: auto;">
             <label id="userName" name="userName" style="width:75%;height:15px;border-color: Transparent;">Not logged in.</label>
