@@ -232,3 +232,23 @@
 </script>
 </body>
 </html>
+
+
+
+
+
+function onSignin(idToken) {
+    let user = clientApplication.getAccount();
+    document.getElementById("login").innerHTML = user.name; // Update button text to user's name
+    document.getElementById("login").style.color = "#FFFFFF"; // Ensure the text is white
+    getUserProfilePicture();
+    startChat();
+}
+
+function onSignInClick() {
+    let requestObj = { scopes: ["user.read", 'openid', 'profile'] };
+    clientApplication.loginPopup(requestObj).then(onSignin).catch(function (error) {
+        console.log(error)
+    });
+}
+
