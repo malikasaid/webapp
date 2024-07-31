@@ -67,18 +67,14 @@
     </div>
     <div id="webchat" role="main"></div>
 </div>
-
 <script>
     var clientApplication;
-    var directLine;
-    var userId;
-    var store;
-    var userAvatar;
+    var userAvatarUrl = 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png';
 
     (function () {
         var msalConfig = {
             auth: {
-                clientId: 'id',
+                clientId: 'link',
                 authority: 'link'
             },
             cache: {
@@ -89,69 +85,45 @@
         if (!clientApplication) {
             clientApplication = new Msal.UserAgentApplication(msalConfig);
         }
-    }());
+    })();
 
-    async function onSignin() {
+    function onSignin(idToken) {
         let user = clientApplication.getAccount();
-        document.getElementById("userName").innerHTML = "Currently logged in as " + user.name;
-
-        // Fetch user's profile picture
-        try {
-            userAvatar = await fetchUserProfilePicture();
-        } catch (error) {
-            console.error("Failed to fetch user profile picture: " + error);
-            userAvatar = 'https://www.feelgoodlearnandmassage.co.uk/wp-content/uploads/2015/03/personicon.png'; // Fallback avatar
-        }
-
-        startWebChat();
+        document.getElementById("userName").innerHTML = "Logged in as " + user.name;
+        getUserProfilePicture();
+        startChat();
     }
 
     function onSignInClick() {
-        let requestObj = {
-            scopes: ["user.read", 'openid', 'profile']
-        };
-
+        let requestObj = { scopes: ["user.read", 'openid', 'profile'] };
         clientApplication.loginPopup(requestObj).then(onSignin).catch(function (error) {
-            console.log(error);
+            console.log(error)
         });
     }
 
-    async function fetchUserProfilePicture() {
-        let requestObj = {
-            scopes: ["user.read"]
-        };
-
-        const tokenResponse = await clientApplication.acquireTokenSilent(requestObj);
-        const accessToken = tokenResponse.accessToken;
-
-        const graphEndpoint = "https://graph.microsoft.com/v1.0/me/photo/$value";
-        const response = await fetch(graphEndpoint, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
+    async function getUserProfilePicture() {
+        try {
+            let tokenResponse = await clientApplication.acquireTokenSilent({ scopes: ["user.read"] });
+            let accessToken = tokenResponse.accessToken;
+            let response = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (response.ok) {
+                let blob = await response.blob();
+                userAvatarUrl = URL.createObjectURL(blob);
             }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch profile picture: ${response.status}`);
+        } catch (error) {
+            console.error("Failed to fetch user profile picture:", error);
         }
-
-        const blob = await response.blob();
-        return URL.createObjectURL(blob);
     }
 
-    function startWebChat() {
-        (async function () {
-            var theURL = "link"; // you can find the token URL via the mobile app channel configuration
-
-            userId = clientApplication.account?.accountIdentifier != null ?
-                ("You-customized-prefix" + clientApplication.account.accountIdentifier).substr(0, 64)
-                : (Math.random().toString() + Date.now().toString()).substr(0, 64);
-
+    function startChat() {
+        (async function main() {
+            var theURL = "link";
             const { token } = await fetchJSON(theURL);
-            directLine = window.WebChat.createDirectLine({ token });
+            const directLine = window.WebChat.createDirectLine({ token });
 
-            store = WebChat.createStore({}, ({ dispatch }) => next => action => {
-                const { type } = action;
+            const store = WebChat.createStore({}, ({ dispatch }) => next => action => {
                 if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
                     dispatch({
                         type: 'WEB_CHAT/SEND_EVENT',
@@ -161,49 +133,8 @@
                             value: { text: "hello" }
                         }
                     });
-                    return next(action);
                 }
-                if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-                    const activity = action.payload.activity;
-                    let resourceUri;
-                    if (activity.from && activity.from.role === 'bot' &&
-                        (resourceUri = getOAuthCardResourceUri(activity))) {
-                        exchangeTokenAsync(resourceUri).then(function (token) {
-                            if (token) {
-                                directLine.postActivity({
-                                    type: 'invoke',
-                                    name: 'signin/tokenExchange',
-                                    value: {
-                                        id: activity.attachments[0].content.tokenExchangeResource.id,
-                                        connectionName: activity.attachments[0].content.connectionName,
-                                        token
-                                    },
-                                    "from": {
-                                        id: userId,
-                                        name: clientApplication.account.name,
-                                        role: "user"
-                                    }
-                                }).subscribe(
-                                    id => {
-                                        if (id === 'retry') {
-                                            return next(action);
-                                        }
-                                    },
-                                    error => {
-                                        return next(action);
-                                    }
-                                );
-                                return;
-                            } else {
-                                return next(action);
-                            }
-                        });
-                    } else {
-                        return next(action);
-                    }
-                } else {
-                    return next(action);
-                }
+                return next(action);
             });
 
             const styleSet = window.WebChat.createStyleSet({
@@ -216,7 +147,7 @@
                 bubbleFromUserBorderColor: '#EAEAEA',
                 bubbleFromBotBorderColor: '#EAEAEA',
                 bubbleFromUserBorderRadius: 20,
-                sendBoxBorder: '1px solid #000000', /* Black border for send box */
+                sendBoxBorder: '1px solid #000000',
                 sendBoxTextColor: '#2D2D2D',
                 sendBoxButtonColor: '#00669E',
                 sendBoxButtonBackground: '#FFF3E0',
@@ -238,7 +169,7 @@
             };
 
             const avatarOptions = {
-                userAvatarImage: userAvatar, // Set fetched user avatar
+                userAvatarImage: userAvatarUrl,
                 botAvatarImage: 'https://www.paidmembershipspro.com/wp-content/uploads/2022/01/automatorwp-icon.png',
                 botAvatarInitials: 'BT',
                 userAvatarInitials: 'Me',
@@ -246,25 +177,12 @@
 
             window.WebChat.renderWebChat({
                 directLine,
-                store,
                 styleSet,
                 styleOptions: {
                     ...avatarOptions,
                     hideUploadButton: true
                 }
             }, document.getElementById('webchat'));
-
-            // Start conversation automatically
-            directLine.postActivity({
-                from: { id: userId, name: clientApplication.account.name },
-                name: 'startConversation',
-                type: 'event',
-                value: { text: 'hello' }
-            }).subscribe(
-                id => console.log(`Posted activity, assigned ID ${id}`),
-                error => console.error('Error posting activity', error)
-            );
-
         })().catch(err => console.error("An error occurred: " + err));
     }
 
